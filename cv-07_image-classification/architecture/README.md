@@ -1,0 +1,3 @@
+# architecture folder
+- 공통으로 사용하지만, <span style='color:lightgreen'>변경이 자주 발생하며</span> <span style="color:pink">학습할 모델의 구조를 정의</span>하는 코드가 모인 폴더
+    - (ex) cnn.py, transformer.py, vit.py, etc ...
