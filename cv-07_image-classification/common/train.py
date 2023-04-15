@@ -82,7 +82,15 @@ def increment_path(path, exist_ok=False):
         return f"{path}{n}"
 
 
-def train(data_dir, model_dir, args):
+def train(data_dir: str, model_dir: str, args: argparse.Namespace):
+    """모델 학습에 사용하는 함수
+
+    Args:
+        data_dir (str): 학습에 사용될 데이터의 경로
+        model_dir (str): 학습된 모델의 pth 파일 및 log들을 저장하는 경로
+        args (argparse.Namespace): 사용자가 입력한 argument 값들
+    """
+    
     seed_everything(args.seed)
 
     save_dir = increment_path(os.path.join(model_dir, args.name))
