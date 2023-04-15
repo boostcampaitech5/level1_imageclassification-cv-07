@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from common.dataset import MaskBaseDataset
+from common.augmentation import BaseAugmentation
 from common.loss import create_criterion
 
 from typing import Union
@@ -129,7 +130,7 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
     num_classes = dataset.num_classes  # 18
 
     # -- augmentation
-    transform_module = getattr(import_module("augmentation"), args.augmentation)  # default: BaseAugmentation
+    transform_module = getattr(import_module("common.augmentation"), args.augmentation)  # default: BaseAugmentation
     transform = transform_module(
         resize=args.resize,
         mean=dataset.mean,
