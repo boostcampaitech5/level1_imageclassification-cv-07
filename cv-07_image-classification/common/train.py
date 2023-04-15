@@ -147,7 +147,7 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
     )
 
     # -- model
-    model_module = getattr(import_module("model"), args.model)  # default: BaseModel
+    model_module = getattr(import_module("architecture.model"), args.model)  # default: BaseModel
     model = model_module(
         num_classes=num_classes
     ).to(device)
