@@ -18,6 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 from dataset import MaskBaseDataset
 from loss import create_criterion
 
+from typing import Union
 
 def seed_everything(seed: int):
     """실험의 재현가능성을 위해 seed를 설정하는 함수.
@@ -69,12 +70,16 @@ def grid_image(np_images, gts, preds, n=16, shuffle=False):
     return figure
 
 
-def increment_path(path, exist_ok=False):
-    """ Automatically increment path, i.e. runs/exp --> runs/exp0, runs/exp1 etc.
+def increment_path(path: Union[str, Path], exist_ok=False) -> str:
+    """ 경로명을 자동으로 증가시켜주는 함수.
+    e.g. runs/exp --> runs/exp0, runs/exp1 etc.
 
     Args:
-        path (str or pathlib.Path): f"{model_dir}/{args.name}".
-        exist_ok (bool): whether increment path (increment if False).
+        path (str): f"{model_dir}/{args.name}".
+        exist_ok (bool): 경로명을 증가시킬지 선택. Defaults to False.
+
+    Returns:
+        str: 증가시킨 경로명
     """
     path = Path(path)
     if (path.exists() and exist_ok) or (not path.exists()):
