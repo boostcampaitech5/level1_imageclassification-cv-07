@@ -41,6 +41,18 @@ def get_lr(optimizer):
 
 
 def grid_image(np_images, gts, preds, n=16, shuffle=False):
+    """validation data에 대한 모델의 예측 결과를 시각화하는 함수.
+
+    Args:
+        np_images (_type_): 입력 이미지(주의: tensor와 ndarray는 차원 나열 방식이 다름)
+        gts (_type_): 정답(=ground truth, label)
+        preds (_type_): 모델 예측 결과
+        n (int, optional): 몇 개의 이미지를 나타낼 것인지 결정하는 파라미터. Defaults to 16.
+        shuffle (bool, optional): 입력된 batch 단위의 이미지 중에서, 무작위로 선택할 지를 결정하는 파라미터. Defaults to False.
+
+    Returns:
+        _type_: 예측 결과가 시각화된 figure
+    """
     batch_size = np_images.shape[0]
     assert n <= batch_size
 
@@ -180,7 +192,7 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
             inputs = inputs.to(device)
             labels = labels.to(device)
 
-            optimizer.zero_grad()
+            optimizer.zero_grad() # 후에 fine-tuning을 시도한다면 optimizer가 여러 개 필요할 듯 해서, train.py를 독립적으로 만들어야할 수도 있음.
 
             outs = model(inputs)
             preds = torch.argmax(outs, dim=-1)
