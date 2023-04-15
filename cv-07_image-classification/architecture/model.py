@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
@@ -37,12 +38,11 @@ class ResNet18(nn.Module):
     def __init__(self, num_classes):
         super(ResNet18, self).__init__()
 
-        self.backbone = models.resnet18(pretrained=True)
-        self.classifier = BaseModel(num_classes)
+        self.resnet18 = models.resnet18(pretrained=True)
+        self.resnet18.fc = nn.Linear(in_features=512, out_features=num_classes)
     
     def forward(self, x):
-        x = self.backbone(x)
-        x = self.classifier(x)
+        x = self.resnet18(x)
 
         return x
 
@@ -63,3 +63,13 @@ class MyModel(nn.Module):
         2. 결과로 나온 output 을 return 해주세요
         """
         return x
+
+# Test code
+if __name__ == '__main__':
+    model = ResNet18(num_classes=18)
+    # overview
+    for name, module in model.named_modules():
+        print(name, module)
+
+    input = torch.randn(4, 3, 224, 224)
+    print(model(input).shape)
