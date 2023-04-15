@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from common.dataset import MaskBaseDataset
-from loss import create_criterion
+from common.loss import create_criterion
 
 from typing import Union
 
