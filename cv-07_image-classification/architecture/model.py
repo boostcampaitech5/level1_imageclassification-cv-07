@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
 
 
 class BaseModel(nn.Module):
@@ -32,6 +33,18 @@ class BaseModel(nn.Module):
         x = x.view(-1, 128)
         return self.fc(x)
 
+class ResNet18(nn.Module):
+    def __init__(self, num_classes):
+        super(ResNet18, self).__init__()
+
+        self.backbone = models.resnet18(pretrained=True)
+        self.classifier = BaseModel(num_classes)
+    
+    def forward(self, x):
+        x = self.backbone(x)
+        x = self.classifier(x)
+
+        return x
 
 # Custom Model Template
 class MyModel(nn.Module):
