@@ -19,7 +19,12 @@ from dataset import MaskBaseDataset
 from loss import create_criterion
 
 
-def seed_everything(seed):
+def seed_everything(seed: int):
+    """실험의 재현가능성을 위해 seed를 설정하는 함수.
+
+    Args:
+        seed (int): 사용자가 정의한 정수 값.
+    """
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # if use multi-GPU
