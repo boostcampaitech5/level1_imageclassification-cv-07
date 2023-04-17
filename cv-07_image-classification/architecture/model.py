@@ -35,7 +35,7 @@ class BaseModel(nn.Module):
         return self.fc(x)
 
 class ResNet18(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=18):
         super(ResNet18, self).__init__()
 
         self.resnet18 = models.resnet18(pretrained=True)
@@ -45,6 +45,56 @@ class ResNet18(nn.Module):
         x = self.resnet18(x)
 
         return x
+    
+
+class ResNet50(nn.Module):
+    def __init__(self, num_classes=18):
+        super(ResNet50, self).__init__()
+
+        self.resnet50 = models.resnet50(pretrained=True)
+        self.resnet50.fc = nn.Linear(in_features=512, out_features=num_classes)
+
+    def forward(self, x):
+        x = self.resnet50(x)
+
+        return x
+
+class MyEnsemble(nn.Module):
+    def __init__(self, num_classes=18):
+        super(MyEnsemble, self).__init__()
+
+        self.modelA = ResNet18()
+        self.modelA.load_state_dict(torch.load("/opt/ml/level1_imageclassification-cv-07/cv-07_image-classification/model/fold_model/exp/best.pth"))
+        self.modelA.eval()
+
+        self.modelB = ResNet18()
+        self.modelB.load_state_dict(torch.load("/opt/ml/level1_imageclassification-cv-07/cv-07_image-classification/model/fold_model/exp2/best.pth"))
+        self.modelB.eval()
+
+        self.modelC = ResNet18()
+        self.modelC.load_state_dict(torch.load("/opt/ml/level1_imageclassification-cv-07/cv-07_image-classification/model/fold_model/exp3/best.pth"))
+        self.modelC.eval()
+
+        self.modelD = ResNet18()
+        self.modelD.load_state_dict(torch.load("/opt/ml/level1_imageclassification-cv-07/cv-07_image-classification/model/fold_model/exp4/best.pth"))
+        self.modelD.eval()
+
+        self.modelE = ResNet18()
+        self.modelE.load_state_dict(torch.load("/opt/ml/level1_imageclassification-cv-07/cv-07_image-classification/model/fold_model/exp5/best.pth"))
+        self.modelE.eval()
+        
+    def forward(self, x):
+        out1 = self.modelA(x)
+        out2 = self.modelB(x)
+        out3 = self.modelC(x)
+        out4 = self.modelD(x)
+        out5 = self.modelE(x)
+        
+        out = out1 + out2 + out3 + out4 + out5
+        out = torch.softmax(out, dim=-1)
+
+        return out
+
 
 # Custom Model Template
 class MyModel(nn.Module):
@@ -66,10 +116,13 @@ class MyModel(nn.Module):
 
 # Test code
 if __name__ == '__main__':
-    model = ResNet18(num_classes=18)
-    # overview
-    for name, module in model.named_modules():
-        print(name, module)
+    # model = ResNet18(num_classes=18)
+    # # overview
+    # for name, module in model.named_modules():
+    #     print(name, module)
 
-    input = torch.randn(4, 3, 224, 224)
-    print(model(input).shape)
+    # input = torch.randn(4, 3, 224, 224)
+    # print(model(input).shape)
+
+    ensemble = MyEnsemble()
+
