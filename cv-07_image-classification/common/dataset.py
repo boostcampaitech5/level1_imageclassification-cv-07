@@ -198,9 +198,10 @@ class MaskBaseDataset(Dataset):
         """
         labels = []
         
-        for img, label in self.dataset:
+        for idx in range(len(self.image_paths)):
+            label = self.encode_multi_class(self.get_mask_label(idx), self.get_gender_label(idx), self.get_age_label(idx))
             labels.append(label)
-        
+
         return labels
 
 
