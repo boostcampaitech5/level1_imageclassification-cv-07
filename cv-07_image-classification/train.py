@@ -12,8 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, SubsetRandomSampler
 from torch.utils.tensorboard import SummaryWriter
+from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
 
 from common.dataset import MaskBaseDataset
 from common.augmentation import BaseAugmentation
@@ -104,6 +105,197 @@ def increment_path(path: Union[str, Path], exist_ok=False) -> str:
         i = [int(m.groups()[0]) for m in matches if m]
         n = max(i) + 1 if i else 2
         return f"{path}{n}"
+
+
+def train_with_fold(data_dir: str, model_dir: str, args: argparse.Namespace, num_folds: int =5):
+    """k-fold, stratified-fold, grouped-fold 방식으로 모델을 학습시킬 때 사용하는 함수
+
+    Args:
+        data_dir (str): 입력 데이터 경로
+        model_dir (str): 학습한 모델을 저장할 경로
+        args (argparse.Namespace): 사용자가 입력한 arguments
+        num_folds (int, optional): 폴드의 개수. Defaults to 5.
+    """
+
+    # -- settings
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+
+    # -- dataset
+    dataset_module = getattr(import_module("common.dataset"), args.dataset)
+    dataset = dataset_module(
+        data_dir=data_dir,
+    )
+    num_classes = dataset.num_classes # 18
+
+    # -- augmentation
+    transform_module = getattr(import_module("common.augmentation"), args.augmentation)
+    transform = transform_module(
+        resize=args.resize,
+        mean=dataset.mean,
+        std=dataset.std,
+    )
+    dataset.set_transform(transform)
+
+    # -- create fold (mode에 따라 다른 방식으로 fold를 생성)
+    fold = None
+    if args.mode == "k": # k-fold 방식으로 dataloader를 생성
+        fold = KFold(n_splits=num_folds, shuffle=True, random_state=args.seed)
+        splitted_fold = fold.split(dataset)
+    elif args.mode == "s": # stratified-fold 방식으로 dataloader를 생성
+        fold = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=args.seed)
+        gt = []
+        for mask, gender, age in zip(dataset.mask_labels, dataset.gender_labels, dataset.age_labels):
+            gt.append(dataset.encode_multi_class(mask, gender, age))
+        
+        splitted_fold = fold.split(dataset, gt)
+    elif args.mode == "g": # grouped-fold 방식으로 dataloader를 생성 (아직 사용해보지 않았음)
+        fold = GroupKFold(n_splits=num_folds)
+    else:
+        print(f"Unknown inputs: you must select mode in k(k-fold), s(stratified-fold), g(grouped-fold)")
+        exit()
+
+    
+    fold_model_dir = increment_path(os.path.join(model_dir, 'fold_model'))
+    for fold, (train_ids, val_ids) in enumerate(splitted_fold):
+
+        seed_everything(args.seed)
+
+        save_dir = increment_path(os.path.join(fold_model_dir, args.name))
+
+        # Print
+        print(f'Fold {fold}')
+        print('-'*20)
+
+        # Sample elements randomly from a given list of ids, no replacement.
+        train_subsampler = SubsetRandomSampler(train_ids)
+        val_subsampler = SubsetRandomSampler(val_ids)
+
+        # 현재 fold에서 train/val dataloader를 정의
+        train_loader = DataLoader(
+            dataset,
+            batch_size=args.batch_size,
+            num_workers=multiprocessing.cpu_count() // 2,
+            sampler=train_subsampler,
+            pin_memory=use_cuda,
+            drop_last=True,   
+        )
+
+        val_loader = DataLoader(
+            dataset,
+            batch_size=args.valid_batch_size,
+            num_workers=multiprocessing.cpu_count() // 2,
+            sampler=val_subsampler,
+            pin_memory=use_cuda,
+            drop_last=True,
+        )
+
+        # -- model
+        model_module = getattr(import_module("architecture.model"), args.model) # default: BaseModel
+        model = model_module(
+            num_classes=num_classes,
+        ).to(device)
+        model = torch.nn.DataParallel(model)
+
+        # -- loss & metric
+        criterion = create_criterion(args.criterion) # default: cross_entropy
+        opt_module = getattr(import_module("torch.optim"), args.optimizer)
+        optimizer = opt_module(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=args.lr,
+            weight_decay=5e-4
+        )
+        scheduler = StepLR(optimizer, args.lr_decay_step, gamma=0.5)
+
+        # -- logging
+        logger = SummaryWriter(log_dir=save_dir)
+        with open(os.path.join(save_dir, 'config.json'), 'w', encoding='utf-8') as f:
+            json.dump(vars(args), f, ensure_ascii=False, indent=4)
+
+
+        best_val_acc = 0
+        best_val_loss = np.inf
+        for epoch in range(args.epochs):
+            # train loop
+            model.train()
+            loss_value = 0
+            matches = 0
+            for idx, train_batch in enumerate(train_loader):
+                inputs, labels = train_batch
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+                optimizer.zero_grad()
+
+                outs = model(inputs)
+                preds = torch.argmax(outs, dim=-1)
+                loss = criterion(outs, labels)
+
+                loss.backward()
+                optimizer.step()
+
+                loss_value += loss.item()
+                matches += (preds == labels).sum().item()
+                if (idx + 1) % args.log_interval == 0:
+                    train_loss = loss_value / args.log_interval
+                    train_acc = matches / args.batch_size / args.log_interval
+                    current_lr = get_lr(optimizer)
+                    print(
+                        f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
+                        f"training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}"
+                    )
+                    logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
+                    logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
+
+                    loss_value = 0
+                    matches = 0
+
+            scheduler.step()
+
+            # val loop
+            with torch.no_grad():
+                print("Calculating validation results...")
+                model.eval()
+                val_loss_items = []
+                val_acc_items = []
+                figure = None
+                for val_batch in val_loader:
+                    inputs, labels = val_batch
+                    inputs = inputs.to(device)
+                    labels = labels.to(device)
+
+                    outs = model(inputs)
+                    preds = torch.argmax(outs, dim=-1)
+
+                    loss_item = criterion(outs, labels).item()
+                    acc_item = (labels == preds).sum().item()
+                    val_loss_items.append(loss_item)
+                    val_acc_items.append(acc_item)
+
+                    if figure is None:
+                        inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
+                        inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                        figure = grid_image(
+                            inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                        )
+
+                val_loss = np.sum(val_loss_items) / len(val_loader)
+                # val_acc = np.sum(val_acc_items) / len(val_set)
+                val_acc = np.sum(val_acc_items) / int(len(dataset) * (1 / num_folds))
+                best_val_loss = min(best_val_loss, val_loss)
+                if val_acc > best_val_acc:
+                    print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
+                    torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                    best_val_acc = val_acc
+                torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+                print(
+                    f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
+                    f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
+                )
+                logger.add_scalar("Val/loss", val_loss, epoch)
+                logger.add_scalar("Val/accuracy", val_acc, epoch)
+                logger.add_figure("results", figure, epoch)
+                print()
 
 
 def train(data_dir: str, model_dir: str, args: argparse.Namespace):
@@ -280,6 +472,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='BaseModel', help='model type (default: BaseModel)')
     parser.add_argument('--optimizer', type=str, default='SGD', help='optimizer type (default: SGD)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
+    parser.add_argument('--mode', type=str, default='plain', help='whether using fold training schemes (default: plain)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='cross_entropy', help='criterion type (default: cross_entropy)')
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
@@ -295,5 +488,9 @@ if __name__ == '__main__':
 
     data_dir = args.data_dir
     model_dir = args.model_dir
+    mode = args.mode
 
-    train(data_dir, model_dir, args)
+    if mode == 'plain':
+        train(data_dir, model_dir, args)
+    elif mode in ['k', 's', 'g']: # k-fold, stratified-fold, grouped-fold
+        train_with_fold(data_dir, model_dir, args)
