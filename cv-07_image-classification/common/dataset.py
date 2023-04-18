@@ -190,6 +190,18 @@ class MaskBaseDataset(Dataset):
         n_train = len(self) - n_val
         train_set, val_set = random_split(self, [n_train, n_val])
         return train_set, val_set
+    
+    def get_labels(self):
+        """
+        Imbalanced Dataset Sampling을 위한 함수
+        표본이 적은 데이터를 Oversampling하기 위해서 현재 데이터 셋의 라벨 값들을 저장한 뒤에 return
+        """
+        labels = []
+        
+        for img, label in self.dataset:
+            labels.append(label)
+        
+        return labels
 
 
 class MaskSplitByProfileDataset(MaskBaseDataset):

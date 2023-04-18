@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.optim.lr_scheduler import StepLR
+from torchsampler import ImbalancedDatasetSampler
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
@@ -338,14 +339,25 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
     # -- data_loader
     train_set, val_set = dataset.split_dataset()
 
-    train_loader = DataLoader(
-        train_set,
-        batch_size=args.batch_size,
-        num_workers=multiprocessing.cpu_count() // 2,
-        shuffle=True,
-        pin_memory=use_cuda,
-        drop_last=True,
-    )
+    if args.Imabalanced:
+        train_loader = DataLoader(
+            train_set,
+            sampler = ImbalancedDatasetSampler(train_set),
+            batch_size=args.batch_size,
+            num_workers=multiprocessing.cpu_count() // 2,
+            shuffle=False,
+            pin_memory=use_cuda,
+            drop_last=True,
+        )
+    else:
+        train_loader = DataLoader(
+            train_set,
+            batch_size=args.batch_size,
+            num_workers=multiprocessing.cpu_count() // 2,
+            shuffle=True,
+            pin_memory=use_cuda,
+            drop_last=True,
+        )
 
     val_loader = DataLoader(
         val_set,
@@ -387,6 +399,8 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
         matches = 0
         for idx, train_batch in enumerate(train_loader):
             inputs, labels = train_batch
+            # 각 iter마다 균등한 labels를 통해 학습하는지 확인용 -> 안돼면 말해주세요!!
+            # print(labels)
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -488,6 +502,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
     parser.add_argument('--early_stopping', type=int, default=0, help="training stops when the loss increases n times in a row")
+    parser.add_argument('--imbalanced', tpye=bool, default=False, help='whether using Imbalanced Dataset Sampling')
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
