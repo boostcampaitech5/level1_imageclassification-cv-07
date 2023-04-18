@@ -1,18 +1,19 @@
 import torch
 from PIL import Image
 from torchvision.transforms import Resize, ToTensor, Normalize, Compose, CenterCrop, ColorJitter
+import albumentations as A
 
 
 class BaseAugmentation:
     def __init__(self, resize, mean, std, **args):
-        self.transform = Compose([
-            Resize(resize, Image.BILINEAR),
-            ToTensor(),
-            Normalize(mean=mean, std=std),
+        self.transform = A.Compose([
+            A.Resize(height=resize[0], width=resize[1]),
+            A.Normalize(mean=(0.548, 0.504, 0.479), std=(0.237, 0.247, 0.246)),
+            A.pytorch.ToTensorV2()
         ])
 
     def __call__(self, image):
-        return self.transform(image)
+        return self.transform(image=image)
 
 
 class AddGaussianNoise(object):
@@ -34,13 +35,12 @@ class AddGaussianNoise(object):
 
 class CustomAugmentation:
     def __init__(self, resize, mean, std, **args):
-        self.transform = Compose([
-            CenterCrop((320, 256)),
-            Resize(resize, Image.BILINEAR),
-            ColorJitter(0.1, 0.1, 0.1, 0.1),
-            ToTensor(),
-            Normalize(mean=mean, std=std),
-            AddGaussianNoise()
+        self.transform = A.Compose([
+            A.CenterCrop(320, 256),
+            A.Resize(height=resize[0], width=resize[1]),
+            A.ColorJitter(0.1, 0.1, 0.1, 0.1),
+            A.Normalize(mean=mean, std=std),
+            A.pytorch.ToTensorV2()
         ])
 
     def __call__(self, image):
