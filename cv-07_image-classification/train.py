@@ -22,6 +22,8 @@ from common.loss import create_criterion
 from architecture.model import BaseModel
 from typing import Union
 
+from common.pytorchtools import EarlyStopping 
+
 def seed_everything(seed: int):
     """실험의 재현가능성을 위해 seed를 설정하는 함수.
 
@@ -116,6 +118,8 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
     """
     
     seed_everything(args.seed)
+
+    early_stopping = EarlyStopping(patience = args.early_stopping, verbose = True)
 
     save_dir = increment_path(os.path.join(model_dir, args.name))
 
@@ -264,6 +268,11 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
             logger.add_scalar("Val/accuracy", val_acc, epoch)
             logger.add_figure("results", figure, epoch)
             print()
+        
+        if args.early_stopping > 0:
+            early_stopping(val_loss, model)
+            if early_stopping.early_stop: 
+                break
 
 
 if __name__ == '__main__':
@@ -285,6 +294,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
+    parser.add_argument('--early_stopping', type=int, default=0, help="training stops when the loss increases n times in a row")
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
