@@ -44,4 +44,4 @@ class CustomAugmentation:
         ])
 
     def __call__(self, image):
-        return self.transform(image)
+        return self.transform(image=image)
