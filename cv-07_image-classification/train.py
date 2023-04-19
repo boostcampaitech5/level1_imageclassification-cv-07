@@ -515,7 +515,7 @@ if __name__ == '__main__':
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
     parser.add_argument('--early_stopping', type=int, default=0, help="training stops when the loss increases n times in a row")
-    parser.add_argument('--imbalanced', tpye=bool, default=False, help='whether using Imbalanced Dataset Sampling')
+    parser.add_argument('--imbalanced', type=bool, default=False, help='whether using Imbalanced Dataset Sampling')
     parser.add_argument('--valid_transform', type=bool, default=False, help='whether applying transform to validation dataset')
 
     # Container environment
