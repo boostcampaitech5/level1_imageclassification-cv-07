@@ -69,6 +69,18 @@ class ResNet50(nn.Module):
 
         return x
 
+class ResNet152(nn.Module):
+    def __init__(self, num_classes):
+        super(ResNet152, self).__init__()
+
+        self.resnet152 = models.resnet152(pretrained=True)
+        self.resnet152.fc = nn.Linear(in_features=2048, out_features=num_classes)
+
+    def forward(self, x):
+        x = self.resnet152(x)
+
+        return x
+
 class MyEnsemble(nn.Module):
     def __init__(self, num_classes=18):
         """학습한 모델들을 앙상블해서 결과를 출력하는 클래스

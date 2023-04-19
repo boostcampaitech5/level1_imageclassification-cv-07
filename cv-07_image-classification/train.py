@@ -19,7 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
 
 from common.dataset import MaskBaseDataset, Subset_transform
-from common.augmentation import BaseAugmentation
+from common.augmentation import BaseAugmentation, CustomAugmentation
 from common.loss import create_criterion
 
 from architecture.model import BaseModel
