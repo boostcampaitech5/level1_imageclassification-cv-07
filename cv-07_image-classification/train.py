@@ -7,6 +7,7 @@ import random
 import re
 from importlib import import_module
 from pathlib import Path
+import albumentations as A
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +18,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
 
-from common.dataset import MaskBaseDataset
+from common.dataset import MaskBaseDataset, Subset_transform
 from common.augmentation import BaseAugmentation
 from common.loss import create_criterion
 
@@ -334,12 +335,24 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
         mean=dataset.mean,
         std=dataset.std,
     )
-    dataset.set_transform(transform)
 
     # -- data_loader
     train_set, val_set = dataset.split_dataset()
 
-    if args.Imabalanced:
+    train_set = Subset_transform(train_set, transform=transform)
+
+    # -- valid_transform
+    if args.valid_transform:
+        val_set = Subset_transform(val_set, transform=transform)
+    else:
+        val_set = Subset_transform(val_set, transform=A.Compose([
+            A.Resize(height=args.resize[0], width=args.resize[1]),
+            A.Normalize(dataset.mean, dataset.std),
+            A.pytorch.ToTensorV2()
+        ]))
+
+    # -- imbalanced
+    if args.imabalanced:
         train_loader = DataLoader(
             train_set,
             sampler = ImbalancedDatasetSampler(train_set),
@@ -503,6 +516,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
     parser.add_argument('--early_stopping', type=int, default=0, help="training stops when the loss increases n times in a row")
     parser.add_argument('--imbalanced', tpye=bool, default=False, help='whether using Imbalanced Dataset Sampling')
+    parser.add_argument('--valid_transform', type=bool, default=False, help='whether applying transform to validation dataset')
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))

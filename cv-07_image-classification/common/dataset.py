@@ -10,7 +10,6 @@ from PIL import Image
 from torch.utils.data import Dataset, Subset, random_split
 from torchvision.transforms import Resize, ToTensor, Normalize, Compose, CenterCrop, ColorJitter
 
-
 IMG_EXTENSIONS = [
     ".jpg", ".JPG", ".jpeg", ".JPEG", ".png",
     ".PNG", ".ppm", ".PPM", ".bmp", ".BMP",
@@ -132,7 +131,13 @@ class MaskBaseDataset(Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
-        assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
+        """
+        기존 __getitem__은 데이터를 가지고 올 때, transform을 시켜준 뒤에 가지고 오는 방식입니다.
+
+        train, valid set을 각각 augmentation 유무를 판단하기 위해서 기존 존재했던 코드 중에서 불필요한 코드는 주석 처리로 남기겠습니다.
+        현재의 함수에서는 단순히 image와 label을 가져오는 함수로 사용됩니다.
+        """
+        # assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
 
         image = self.read_image(index)
         mask_label = self.get_mask_label(index)
@@ -140,8 +145,9 @@ class MaskBaseDataset(Dataset):
         age_label = self.get_age_label(index)
         multi_class_label = self.encode_multi_class(mask_label, gender_label, age_label)
 
-        image_transform = self.transform(image)
-        return image_transform, multi_class_label
+        # image_transform = self.transform(image)
+        # return image_transform, multi_class_label
+        return image, multi_class_label
 
     def __len__(self):
         return len(self.image_paths)
@@ -190,19 +196,6 @@ class MaskBaseDataset(Dataset):
         n_train = len(self) - n_val
         train_set, val_set = random_split(self, [n_train, n_val])
         return train_set, val_set
-    
-    def get_labels(self):
-        """
-        Imbalanced Dataset Sampling을 위한 함수
-        표본이 적은 데이터를 Oversampling하기 위해서 현재 데이터 셋의 라벨 값들을 저장한 뒤에 return
-        """
-        labels = []
-        
-        for idx in range(len(self.image_paths)):
-            label = self.encode_multi_class(self.get_mask_label(idx), self.get_gender_label(idx), self.get_age_label(idx))
-            labels.append(label)
-
-        return labels
 
 
 class MaskSplitByProfileDataset(MaskBaseDataset):
@@ -281,3 +274,31 @@ class TestDataset(Dataset):
 
     def __len__(self):
         return len(self.img_paths)
+
+class Subset_transform(Dataset):
+    def __init__(self, dataset, transform):
+        self.dataset = dataset
+        self.transform = transform
+
+    def __getitem__(self, index):
+        image, labels = self.dataset[index]
+
+        image = np.asarray(image)
+        image = self.transform(image=image)['image']
+        
+        return image, labels
+
+    def __len__(self):
+        return len(self.dataset)
+    
+    def get_labels(self):
+        """
+        Imbalanced Dataset Sampling을 위한 함수
+        표본이 적은 데이터를 Oversampling하기 위해서 현재 데이터 셋의 라벨 값들을 저장한 뒤에 return
+        """
+        labels = []
+        
+        for img, label in self.dataset:
+            labels.append(label)
+        
+        return labels
