@@ -36,10 +36,13 @@ class AddGaussianNoise(object):
 class CustomAugmentation:
     def __init__(self, resize, mean, std, **args):
         self.transform = A.Compose([
-            A.CenterCrop(320, 256),
+            A.CenterCrop(320, 240),
             A.Resize(height=resize[0], width=resize[1]),
-            A.ColorJitter(0.1, 0.1, 0.1, 0.1),
-            A.Normalize(mean=mean, std=std),
+            A.HorizontalFlip(p=0.5),
+            A.CoarseDropout(p=0.5, max_holes=20, max_height=15, max_width=15, min_holes=5, min_height=8, min_width=8),
+            A.Downscale(p=0.5, scale_min=0.7, scale_max=0.9999999, interpolation=2),
+            A.Blur(p=0.5, blur_limit=(1, 3)),
+            A.Normalize(mean, std),
             A.pytorch.ToTensorV2()
         ])
 
