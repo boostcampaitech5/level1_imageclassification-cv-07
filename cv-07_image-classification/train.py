@@ -8,6 +8,7 @@ import re
 from importlib import import_module
 from pathlib import Path
 import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +26,9 @@ from common.loss import create_criterion
 from architecture.model import BaseModel
 from typing import Union
 
-from common.pytorchtools import EarlyStopping 
+from common.pytorchtools import EarlyStopping
+import wandb
+from sklearn.metrics import f1_score
 
 def seed_everything(seed: int):
     """실험의 재현가능성을 위해 seed를 설정하는 함수.
@@ -352,7 +355,7 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
         ]))
 
     # -- imbalanced
-    if args.imabalanced:
+    if args.imbalanced:
         train_loader = DataLoader(
             train_set,
             sampler = ImbalancedDatasetSampler(train_set),
@@ -438,6 +441,11 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
                 )
                 logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
                 logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
+                wandb.log({
+                    "Train/loss": train_loss,
+                    "Train/accuracy": train_acc,
+                    "Train F1 Score": f1_score(labels.clone().detach().cpu().numpy(), preds.clone().detach().cpu().numpy(), average='macro')
+                })
 
                 loss_value = 0
                 matches = 0
@@ -486,6 +494,11 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
             logger.add_scalar("Val/loss", val_loss, epoch)
             logger.add_scalar("Val/accuracy", val_acc, epoch)
             logger.add_figure("results", figure, epoch)
+            wandb.log({
+                "Val/loss": val_loss,
+                "Val/accuracy": val_acc,
+                "Val F1 score": f1_score(labels.clone().detach().cpu().numpy(), preds.clone().detach().cpu().numpy(), average='macro')
+            })
             print()
         
         if args.early_stopping > 0:
@@ -495,6 +508,7 @@ def train(data_dir: str, model_dir: str, args: argparse.Namespace):
 
 
 if __name__ == '__main__':
+    wandb.init(project="image-classification-competitions", reinit=True)
     parser = argparse.ArgumentParser()
 
     # Data and model checkpoints directories
@@ -525,6 +539,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
+    wandb.config.update(args)
+    wandb.run.name = args.name
     data_dir = args.data_dir
     model_dir = args.model_dir
     mode = args.mode
