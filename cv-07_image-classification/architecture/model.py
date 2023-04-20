@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+import timm
 
 
 class BaseModel(nn.Module):
@@ -80,6 +81,33 @@ class ResNet152(nn.Module):
         x = self.resnet152(x)
 
         return x
+
+
+class EfficientNetV2_S(nn.Module):
+    def __init__(self, num_classes=18):
+        super(EfficientNetV2_S, self).__init__()
+
+        self.backbone = timm.models.efficientnetv2_s()
+        self.backbone.classifier = nn.Linear(in_features=1280, out_features=num_classes)
+    
+    def forward(self, x):
+        x = self.backbone(x)
+
+        return x
+
+
+class Beit(nn.Module):
+    def __init__(self, num_classes=18):
+        super(Beit, self).__init__()
+
+        self.backbone = timm.models.beit_large_patch16_224(pretrained=True)
+        self.head = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
+    
+    def forward(self, x):
+        x = self.backbone(x)
+
+        return x
+    
 
 class MyEnsemble(nn.Module):
     def __init__(self, num_classes=18):
