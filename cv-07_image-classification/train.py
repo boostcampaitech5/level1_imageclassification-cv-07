@@ -30,6 +30,9 @@ from common.pytorchtools import EarlyStopping
 import wandb
 from sklearn.metrics import f1_score
 
+from cutmix.cutmix import CutMix
+from cutmix.utils import CutMixCrossEntropyLoss
+
 def seed_everything(seed: int):
     """실험의 재현가능성을 위해 seed를 설정하는 함수.
 
@@ -112,6 +115,149 @@ def increment_path(path: Union[str, Path], exist_ok=False) -> str:
         i = [int(m.groups()[0]) for m in matches if m]
         n = max(i) + 1 if i else 2
         return f"{path}{n}"
+
+
+def train_with_cutmix(data_dir: str, model_dir: str, args: argparse.namespace):
+    
+    seed_everything(args.seed)
+
+    save_dir = increment_path(os.path.join(model_dir, args.name))
+
+    # -- settings
+    use_cuda = torch.cuda.is_available()
+    device = torch.device('cuda' if use_cuda else 'cpu')
+
+    # --dataset
+    dataset_module = getattr(import_module('common.dataset'), args.dataset)
+    dataset = dataset_module(
+        data_dir=data_dir,
+    )
+    num_classes = dataset.num_classes
+
+    # --augmentation
+    transform_module = getattr(import_module('common.augmentation'), args.augmentation)
+    transform = transform_module(
+        resize=args.resize,
+        mean=dataset.mean,
+        std=dataset.std
+    )
+
+    # -- dataloader
+    train_set, val_set = dataset.split_dataset() # 우선 train/val을 분리
+
+    # -- CutMix
+    train_set = Subset_transform(train_set, transform=transform) # resize, normalize를 먼저 적용
+    train_set = CutMix(dataset, num_class=num_classes, beta=1.0, prob=0.5, num_mix=2) # train에만 적용
+
+    val_set = Subset_transform(val_set, transform=A.Compose([
+            A.Resize(height=args.resize[0], width=args.resize[1]),
+            A.Normalize(dataset.mean, dataset.std),
+            A.pytorch.ToTensorV2()
+        ]))
+    
+    train_loader = DataLoader(
+            train_set,
+            batch_size=args.batch_size,
+            num_workers=multiprocessing.cpu_count() // 2,
+            shuffle=True,
+            pin_memory=use_cuda,
+            drop_last=True,
+        )
+
+    val_loader = DataLoader(
+        val_set,
+        batch_size=args.valid_batch_size,
+        num_workers=multiprocessing.cpu_count() // 2,
+        shuffle=False,
+        pin_memory=use_cuda,
+        drop_last=True,
+    )
+
+    # -- model
+    model_module = getattr(import_module("architecture.model"), args.model)  # default: BaseModel
+    model = model_module(
+        num_classes=num_classes
+    ).to(device)
+    model = torch.nn.DataParallel(model)
+
+    # -- loss & metric
+    criterion = CutMixCrossEntropyLoss(True)
+    opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: SGD
+    optimizer = opt_module(
+        filter(lambda p: p.requires_grad, model.parameters()),
+        lr=args.lr,
+        weight_decay=5e-4
+    )
+    scheduler = StepLR(optimizer, args.lr_decay_step, gamma=0.5)
+
+    best_val_loss = np.inf
+    for epoch in range(args.epochs):
+        # train_loop
+        model.train()
+        loss_value = 0
+        matches = 0
+        for idx, train_batch in enumerate(train_loader):
+            inputs, labels = train_batch
+
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            optimizer.zero_grad()
+
+            outs = model(inputs)
+            loss = criterion(outs, labels)
+
+            loss.backward()
+            optimizer.step()
+
+            loss_value += loss.item()
+            if (idx + 1) % args.log_interval == 0:
+                train_loss = loss_value / args.log_interval
+                train_acc = matches / args.batch_size / args.log_interval
+                current_lr = get_lr(optimizer)
+                print(
+                    f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
+                    f"training loss {train_loss:4.4} || lr {current_lr}"
+                )
+                wandb.log({
+                    "Train/loss": train_loss
+                    })
+            
+                loss_value = 0
+                matches = 0
+
+        scheduler.step()
+
+        # val loop
+        with torch.no_grad():
+            print("Calculating validation results...")
+            model.eval()
+            val_loss_items = []
+            val_acc_items = []
+            figure = None
+            for val_batch in val_loader:
+                inputs, labels = val_batch
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+
+                outs = model(inputs)
+
+                loss_item = criterion(outs, labels).item()
+                val_loss_items.append(loss_item)
+
+            val_loss = np.sum(val_loss_items) / len(val_loader)
+            if val_loss < best_val_loss:
+                print(f"New best model for val loss : {val_loss:4.2%}! saving the best model..")
+                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                best_val_loss = val_loss
+            torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+            print(
+                f"loss: {val_loss:4.2} || best loss: {best_val_loss:4.2}"
+            )
+            wandb.log({
+                "Val/loss": val_loss,
+            })
+            print()
 
 
 def train_with_fold(data_dir: str, model_dir: str, args: argparse.Namespace, num_folds: int =5):
