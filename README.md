@@ -6,7 +6,10 @@
 #### 프로젝트 주제 : 주어진 사람의 이미지 데이터와 메타 데이터를 이용하여 마스크 착용 여부 / 성별 / 연령대를 예측하는 muliti-label classification 문제 해결
 > ![260720E3-F60A-493C-B653-6E69A9D2356A](https://user-images.githubusercontent.com/99079272/233901727-0eb91e67-add0-4436-90a7-fc014d9969ee.png)
 
- 📆 대회 일정 : 2023.04.12 ~ 2023.04.20 (11일)
+ #### 📆 대회 일정 : 2023.04.12 ~ 2023.04.20 (11일)
+ 
+ 
+
 
 ### 🗂️ Dataset
 -------------
@@ -54,5 +57,6 @@
 
 ### 👨🏻‍💻 👩🏻‍💻  Members
 -------------
-| [김주성](https://github.com/kjs2109) | [김지현](https://github.com/codehyunn) | [박수영](https://github.com/nstalways) |[오동혁](https://github.com/97DongHyeokOH) |[조수혜](https://github.com/suhyehye) |
+|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)| ![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)| ![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|
 | --- | --- | --- | --- |  --- |
+| [김주성](https://github.com/kjs2109) | [김지현](https://github.com/codehyunn) | [박수영](https://github.com/nstalways) |[오동혁](https://github.com/97DongHyeokOH) |[조수혜](https://github.com/suhyehye) |
