@@ -44,6 +44,7 @@
 ```
 
 ### 🔍 최종 모델 선정
+-------------
 - #### Beit v2 + CutMix 
     - **Beit v2** : Backbone Model로 vision transformer와 codebook embedding을 활용한 모델인 Beit v2 활용해 데이터가 적어서 발생하는 overfitting이나 generalization issue를 해결함
     - **CutMix** : 여러 이미지 데이터를 자르고, 섞어서 새로운 데이터를 만드는 기법으로 높은 일반화 성능과 데이터 증강 효과를 얻을 수 있음
@@ -52,5 +53,6 @@
     - **Imbalanced Dataset Sampler** : 데이터 불균형으로 인해 학습 시 특정 label이 너무 큰 비율을 차지하는 것을 방지하기 위함
 
 ### 👨🏻‍💻 👩🏻‍💻  Members
+-------------
 | [김주성](https://github.com/kjs2109) | [김지현](https://github.com/codehyunn) | [박수영](https://github.com/nstalways) |[오동혁](https://github.com/97DongHyeokOH) |[조수혜](https://github.com/suhyehye) |
 | --- | --- | --- | --- |  --- |
