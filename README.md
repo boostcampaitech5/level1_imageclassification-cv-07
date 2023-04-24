@@ -1,4 +1,4 @@
-## 마스크 착용 상태 분류 프로젝트(Naver BoostCamp AI Tech 5기 CV-7조)
+## 마스크 착용 상태 분류 프로젝트 (Naver BoostCamp AI Tech 5기 CV-7조)
 
 
 ### 📌  프로젝트 개요
@@ -45,6 +45,25 @@
 ├── sample_submission.ipynb
 └── train.py
 ```
+### 📊 EDA
+-------------
+EDA 결과, 클래스 별 데이터 불균형 문제가 심하다는 점을 파악함
+![image](https://user-images.githubusercontent.com/99079272/233931844-ca3660c7-6950-48e0-8231-5fc349a7333c.png)
+- Gender : Male이 약 39%로 Female보다 적음
+- Age : Old label이 약 8%로 데이터 불균형이 심함
+![image](https://user-images.githubusercontent.com/99079272/233932138-ec7f0296-48dc-4fea-b9ca-1428f9058181.png)
+- age label을 구분하는 값인 60이 age label의 최댓값으로 데이터 분할에 문제점이 존재함을 파악함
+
+
+### 💘 Ground Rule
+-------------
+- 매일 아침 실험 계획 및 진행 상황 공유
+- 피어세션 시간에 실험 결과 공유
+- 질문 사항 바로바로 카톡으로 공유 후 함께 해결
+- 각자 branch에서 작업을 수행하고, GitHub에 Pull Request 요청 
+→ 빠른 피드백, 꼼꼼한 코드 리뷰를 통해 서로 상호 작용하며 코드의 품질 높이기
+- 코드 컨벤션(docstring, type hinting)을 정해 깔끔한 프로젝트 만들기
+
 
 ### 🔍 최종 모델 선정
 -------------
