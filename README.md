@@ -69,7 +69,7 @@ EDA 결과, 클래스 별 데이터 불균형 문제가 심하다는 점을 파�
 
 
 
-![image](https://user-images.githubusercontent.com/99079272/233932978-a9684c44-3042-43c6-b7e8-748dcd2f79fa.png)
+![image](https://user-images.githubusercontent.com/99079272/233934474-dffbe257-cda5-433a-be33-0edd5cf7ff13.png)
 - age label을 구분하는 값인 60이 age label의 최댓값으로 데이터 분할에 문제점이 존재함을 파악함
 
 
@@ -82,5 +82,4 @@ EDA 결과, 클래스 별 데이터 불균형 문제가 심하다는 점을 파�
 - #### ResNet 152 + Imbalanced Dataset Sampler + Custom Augmentation (acc : 75.80%, f1 score : 0.7110)
     - **ResNet 152** : BackBone Model로 깊은 모델인 ResNet152 활용
     - **Imbalanced Dataset Sampler** : 데이터 불균형으로 인해 학습 시 특정 label이 너무 큰 비율을 차지하는 것을 방지하기 위함
-
 
