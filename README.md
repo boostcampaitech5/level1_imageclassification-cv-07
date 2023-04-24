@@ -8,7 +8,22 @@
 
  #### 📆 대회 일정 : 2023.04.12 ~ 2023.04.20 (11일)
  
- 
+
+
+### 👨🏻‍💻 👩🏻‍💻  Members
+-------------
+|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)| ![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)| ![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|
+| --- | --- | --- | --- |  --- |
+| [김주성](https://github.com/kjs2109) | [김지현](https://github.com/codehyunn) | [박수영](https://github.com/nstalways) |[오동혁](https://github.com/97DongHyeokOH) |[조수혜](https://github.com/suhyehye) |
+
+ ### 💘 Ground Rule
+-------------
+- 매일 아침 실험 계획 및 진행 상황 공유
+- 피어세션 시간에 실험 결과 공유
+- 질문 사항 바로바로 카톡으로 공유 후 함께 해결
+- 각자 branch에서 작업을 수행하고, GitHub에 Pull Request 요청 
+→ 빠른 피드백, 꼼꼼한 코드 리뷰를 통해 서로 상호 작용하며 코드의 품질 높이기
+- 코드 컨벤션(docstring, type hinting)을 정해 깔끔한 프로젝트 만들기
 
 
 ### 🗂️ Dataset
@@ -51,18 +66,12 @@ EDA 결과, 클래스 별 데이터 불균형 문제가 심하다는 점을 파�
 ![image](https://user-images.githubusercontent.com/99079272/233931844-ca3660c7-6950-48e0-8231-5fc349a7333c.png)
 - Gender : Male이 약 39%로 Female보다 적음
 - Age : Old label이 약 8%로 데이터 불균형이 심함
-![image](https://user-images.githubusercontent.com/99079272/233932138-ec7f0296-48dc-4fea-b9ca-1428f9058181.png)
+
+
+
+![image](https://user-images.githubusercontent.com/99079272/233932978-a9684c44-3042-43c6-b7e8-748dcd2f79fa.png)
 - age label을 구분하는 값인 60이 age label의 최댓값으로 데이터 분할에 문제점이 존재함을 파악함
 
-
-### 💘 Ground Rule
--------------
-- 매일 아침 실험 계획 및 진행 상황 공유
-- 피어세션 시간에 실험 결과 공유
-- 질문 사항 바로바로 카톡으로 공유 후 함께 해결
-- 각자 branch에서 작업을 수행하고, GitHub에 Pull Request 요청 
-→ 빠른 피드백, 꼼꼼한 코드 리뷰를 통해 서로 상호 작용하며 코드의 품질 높이기
-- 코드 컨벤션(docstring, type hinting)을 정해 깔끔한 프로젝트 만들기
 
 
 ### 🔍 최종 모델 선정
@@ -74,8 +83,4 @@ EDA 결과, 클래스 별 데이터 불균형 문제가 심하다는 점을 파�
     - **ResNet 152** : BackBone Model로 깊은 모델인 ResNet152 활용
     - **Imbalanced Dataset Sampler** : 데이터 불균형으로 인해 학습 시 특정 label이 너무 큰 비율을 차지하는 것을 방지하기 위함
 
-### 👨🏻‍💻 👩🏻‍💻  Members
--------------
-|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)| ![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)| ![IMG_3992](https://user-images.githubusercontent.com/99079272/233916797-667e38d1-ab71-49af-b2d0-ef4b537f700a.jpeg)|
-| --- | --- | --- | --- |  --- |
-| [김주성](https://github.com/kjs2109) | [김지현](https://github.com/codehyunn) | [박수영](https://github.com/nstalways) |[오동혁](https://github.com/97DongHyeokOH) |[조수혜](https://github.com/suhyehye) |
+
