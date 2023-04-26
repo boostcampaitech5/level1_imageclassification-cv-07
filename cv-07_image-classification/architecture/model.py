@@ -101,7 +101,7 @@ class Beit(nn.Module):
         super(Beit, self).__init__()
 
         self.backbone = timm.models.beit_large_patch16_224(pretrained=True)
-        self.head = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
+        self.backbone.head = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
     
     def forward(self, x):
         x = self.backbone(x)
