@@ -81,6 +81,8 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+test.ipynb
+viz_inference.ipynb
 
 # IPython
 profile_default/
@@ -176,5 +178,7 @@ pyrightconfig.json
 # 수정 내용 
 *.pt 
 model/untracked_model/
+model
+wandb
 
 # End of https://www.toptal.com/developers/gitignore/api/python
