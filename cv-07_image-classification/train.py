@@ -117,7 +117,7 @@ def increment_path(path: Union[str, Path], exist_ok=False) -> str:
         return f"{path}{n}"
 
 
-def train_with_cutmix(data_dir: str, model_dir: str, args: argparse.namespace):
+def train_with_cutmix(data_dir: str, model_dir: str, args: argparse.Namespace):
     
     seed_everything(args.seed)
 
@@ -146,13 +146,14 @@ def train_with_cutmix(data_dir: str, model_dir: str, args: argparse.namespace):
     train_set, val_set = dataset.split_dataset() # 우선 train/val을 분리
 
     # -- CutMix
-    train_set = Subset_transform(train_set, transform=transform) # resize, normalize를 먼저 적용
-    train_set = CutMix(dataset, num_class=num_classes, beta=1.0, prob=0.5, num_mix=2) # train에만 적용
-
+    train_set = Subset_transform(train_set, transform=transform) # resize, normalize를 적용
+    train_set = CutMix(train_set, num_class=num_classes, beta=1.0, prob=0.5, num_mix=2) # train에만 적용
+    
+        
     val_set = Subset_transform(val_set, transform=A.Compose([
             A.Resize(height=args.resize[0], width=args.resize[1]),
             A.Normalize(dataset.mean, dataset.std),
-            A.pytorch.ToTensorV2()
+            ToTensorV2()
         ]))
     
     train_loader = DataLoader(
@@ -217,7 +218,7 @@ def train_with_cutmix(data_dir: str, model_dir: str, args: argparse.namespace):
                 current_lr = get_lr(optimizer)
                 print(
                     f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"training loss {train_loss:4.4} || lr {current_lr}"
+                    f"training loss {train_loss} || lr {current_lr}"
                 )
                 wandb.log({
                     "Train/loss": train_loss
@@ -247,12 +248,12 @@ def train_with_cutmix(data_dir: str, model_dir: str, args: argparse.namespace):
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
             if val_loss < best_val_loss:
-                print(f"New best model for val loss : {val_loss:4.2%}! saving the best model..")
-                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                print(f"New best model for val loss : {val_loss}! saving the best model..")
+                torch.save(model.module.state_dict(), "best.pth")
                 best_val_loss = val_loss
-            torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+            torch.save(model.module.state_dict(), "last.pth")
             print(
-                f"loss: {val_loss:4.2} || best loss: {best_val_loss:4.2}"
+                f"loss: {val_loss} || best loss: {best_val_loss}"
             )
             wandb.log({
                 "Val/loss": val_loss,
@@ -695,3 +696,5 @@ if __name__ == '__main__':
         train(data_dir, model_dir, args)
     elif mode in ['k', 's', 'g']: # k-fold, stratified-fold, grouped-fold
         train_with_fold(data_dir, model_dir, args)
+    elif mode == 'cutmix':
+        train_with_cutmix(data_dir, model_dir, args)
